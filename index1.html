@@ -2929,13 +2929,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const inAppBrowserName = getInAppBrowserName();
     const isRestrictedBrowser = Boolean(inAppBrowserName);
 
+    const tryOpenExternalBrowser = () => {
+        const currentUrl = window.location.href;
+        const encodedUrl = encodeURIComponent(currentUrl);
+        const userAgent = navigator.userAgent || "";
+        const anchors = [];
+
+        const queueAnchorOpen = href => {
+            const anchor = document.createElement("a");
+            anchor.href = href;
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+            anchor.style.display = "none";
+            document.body.appendChild(anchor);
+            anchors.push(anchor);
+            anchor.click();
+        };
+
+        try {
+            if (/Android/i.test(userAgent)) {
+                queueAnchorOpen(`intent://${currentUrl.replace(/^https?:\/\//i, "")}#Intent;scheme=https;package=com.android.chrome;end`);
+                window.setTimeout(() => {
+                    queueAnchorOpen(`googlechrome://navigate?url=${encodedUrl}`);
+                }, 220);
+                return;
+            }
+
+            if (/iPhone|iPad|iPod/i.test(userAgent)) {
+                queueAnchorOpen(`googlechromes://${currentUrl.replace(/^https?:\/\//i, "")}`);
+                window.setTimeout(() => {
+                    queueAnchorOpen(currentUrl);
+                }, 220);
+                return;
+            }
+
+            queueAnchorOpen(currentUrl);
+        } finally {
+            window.setTimeout(() => {
+                anchors.forEach(anchor => {
+                    if (anchor.parentNode) {
+                        anchor.parentNode.removeChild(anchor);
+                    }
+                });
+            }, 2500);
+        }
+    };
+
     const showRestrictedBrowserMessage = () => {
         const browserName = inAppBrowserName === "embedded browser"
             ? "this in-app browser"
             : `${inAppBrowserName}'s in-app browser`;
         setStatus("OPEN IN CHROME/SAFARI", true);
+        tryOpenExternalBrowser();
         window.alert(
-            `Google login is blocked in ${browserName}. Please open CA 365 Compass in Chrome, Safari, Edge, or Firefox and try again.`
+            `Google login is blocked in ${browserName}. We tried opening your regular browser. If it did not open, tap the menu in this app and choose Open in browser, then try again.`
         );
     };
 
@@ -4657,4 +4704,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
