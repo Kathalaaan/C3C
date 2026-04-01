@@ -2889,6 +2889,56 @@ document.addEventListener("DOMContentLoaded", () => {
         label.style.color = "";
     };
 
+    const getInAppBrowserName = () => {
+        const userAgent = navigator.userAgent || "";
+        const vendor = navigator.vendor || "";
+
+        const checks = [
+            { name: "Instagram", match: /Instagram/i.test(userAgent) },
+            { name: "Facebook", match: /FBAN|FBAV|FB_IAB|FBIOS/i.test(userAgent) },
+            { name: "Messenger", match: /Messenger/i.test(userAgent) },
+            { name: "Telegram", match: /Telegram/i.test(userAgent) },
+            { name: "LinkedIn", match: /LinkedInApp/i.test(userAgent) },
+            { name: "Snapchat", match: /Snapchat/i.test(userAgent) },
+            { name: "TikTok", match: /BytedanceWebview|musical_ly|TikTok/i.test(userAgent) },
+            { name: "WhatsApp", match: /WhatsApp/i.test(userAgent) },
+            { name: "Gmail", match: /GSA|Gmail/i.test(userAgent) },
+            { name: "Line", match: /Line/i.test(userAgent) }
+        ];
+
+        const detected = checks.find(item => item.match);
+        if (detected) return detected.name;
+
+        const isEmbeddedIosWebKit =
+            /iPhone|iPad|iPod/i.test(userAgent) &&
+            /AppleWebKit/i.test(userAgent) &&
+            !/Safari/i.test(userAgent);
+
+        const isGenericAndroidWebView =
+            /Android/i.test(userAgent) &&
+            (/; wv\)/i.test(userAgent) || /\bVersion\/[\d.]+/i.test(userAgent)) &&
+            !/Chrome\/[\d.]+ Mobile Safari\/[\d.]+/i.test(userAgent);
+
+        if (isEmbeddedIosWebKit) return "embedded browser";
+        if (isGenericAndroidWebView) return "embedded browser";
+        if (/Google Inc\./i.test(vendor) || /Apple Computer/i.test(vendor)) return "";
+
+        return "";
+    };
+
+    const inAppBrowserName = getInAppBrowserName();
+    const isRestrictedBrowser = Boolean(inAppBrowserName);
+
+    const showRestrictedBrowserMessage = () => {
+        const browserName = inAppBrowserName === "embedded browser"
+            ? "this in-app browser"
+            : `${inAppBrowserName}'s in-app browser`;
+        setStatus("OPEN IN CHROME/SAFARI", true);
+        window.alert(
+            `Google login is blocked in ${browserName}. Please open CA 365 Compass in Chrome, Safari, Edge, or Firefox and try again.`
+        );
+    };
+
     const renderProfile = (user) => {
         if (!authProfile || !authAvatar || !authName || !authEmail) return;
 
@@ -2933,6 +2983,8 @@ document.addEventListener("DOMContentLoaded", () => {
         resetLoginLabel();
         if (!hasSupabaseConfig) {
             setStatus("SUPABASE NOT READY", true);
+        } else if (isRestrictedBrowser) {
+            setStatus("OPEN IN CHROME/SAFARI", true);
         }
     };
 
@@ -4468,6 +4520,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (loginButton) {
         loginButton.addEventListener("click", async () => {
+            if (isRestrictedBrowser) {
+                await trackActivity("login_blocked_in_app_browser", {
+                    detected_browser: inAppBrowserName
+                });
+                showRestrictedBrowserMessage();
+                return;
+            }
+
             trackActivity("login_clicked", {
                 provider: "google"
             });
@@ -4597,5 +4657,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
 
