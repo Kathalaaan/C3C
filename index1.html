@@ -3055,6 +3055,11 @@ document.addEventListener("DOMContentLoaded", () => {
         label.style.color = "";
     };
 
+    const promptLoginRequired = () => {
+        setStatus("LOGIN REQUIRED", true);
+        window.alert("Please login to access this subject.");
+    };
+
     const getInAppBrowserName = () => {
         const userAgent = navigator.userAgent || "";
         const vendor = navigator.vendor || "";
@@ -4367,6 +4372,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (action === "subject") {
+                if (!currentSession?.user) {
+                    promptLoginRequired();
+                    return;
+                }
+
                 const stageLabel = makisuData[stage].label;
                 makisuState.group = group;
                 makisuState.hasUserSelection = true;
