@@ -164,6 +164,26 @@
         </div>
     </div>
 
+    <div class="restricted-browser-modal hidden" id="restrictedBrowserModal" aria-hidden="true">
+        <div class="restricted-browser-backdrop" data-restricted-close></div>
+        <div class="restricted-browser-card" role="dialog" aria-modal="true" aria-labelledby="restrictedBrowserTitle">
+            <button class="restricted-browser-close" id="restrictedBrowserClose" type="button" aria-label="Close browser popup">Close</button>
+            <p class="restricted-browser-eyebrow">Login Blocked</p>
+            <h2 class="restricted-browser-title" id="restrictedBrowserTitle">Open In Your Main Browser</h2>
+            <p class="restricted-browser-copy" id="restrictedBrowserCopy">
+                This app browser blocks Google sign-in. Open this page in Safari or Chrome, then tap login again.
+            </p>
+            <div class="restricted-browser-steps" id="restrictedBrowserSteps" aria-live="polite"></div>
+            <div class="restricted-browser-actions">
+                <button class="restricted-browser-primary" id="restrictedBrowserOpen" type="button">Try Open Browser</button>
+                <button class="restricted-browser-secondary" id="restrictedBrowserCopyLink" type="button">Copy Link</button>
+            </div>
+            <p class="restricted-browser-tip">
+                If nothing opens, use the app menu and choose <strong>Open in browser</strong>.
+            </p>
+        </div>
+    </div>
+
     <div id="scroll-content">
         <section class="hero">
             <div class="hero-title-container">
@@ -541,6 +561,14 @@ body {
     place-items: center;
 }
 
+.restricted-browser-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2150;
+    display: grid;
+    place-items: center;
+}
+
 .manifest-modal-backdrop {
     position: absolute;
     inset: 0;
@@ -604,6 +632,134 @@ body {
     font-size: 0.95rem;
     line-height: 1.6;
     color: rgba(52, 27, 0, 0.74);
+}
+
+.restricted-browser-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.76);
+    backdrop-filter: blur(8px);
+}
+
+.restricted-browser-card {
+    position: relative;
+    z-index: 1;
+    width: min(92vw, 430px);
+    padding: 1.1rem 1.1rem 1.35rem;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top, rgba(204, 255, 0, 0.14), transparent 34%),
+        linear-gradient(180deg, #101317 0%, #090b0d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    color: #f6f8fb;
+}
+
+.restricted-browser-close {
+    display: block;
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.restricted-browser-eyebrow {
+    margin: 0.35rem 0 0;
+    color: #cbff20;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.restricted-browser-title {
+    margin: 0.6rem 0 0;
+    font-family: 'Syncopate', sans-serif;
+    font-size: clamp(1.05rem, 2.8vw, 1.45rem);
+    line-height: 1.3;
+    color: #ffffff;
+}
+
+.restricted-browser-copy {
+    margin: 0.95rem 0 0;
+    color: rgba(246, 248, 251, 0.8);
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
+.restricted-browser-actions {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+}
+
+.restricted-browser-steps {
+    display: grid;
+    gap: 0.72rem;
+    margin-top: 1.1rem;
+}
+
+.restricted-browser-step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 0.8rem;
+    align-items: start;
+    padding: 0.78rem 0.85rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.restricted-browser-step-index {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #cbff20, #8fd300);
+    color: #071100;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.restricted-browser-step-copy {
+    margin: 0;
+    color: rgba(246, 248, 251, 0.88);
+    font-size: 0.93rem;
+    line-height: 1.55;
+}
+
+.restricted-browser-primary,
+.restricted-browser-secondary {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 14px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.restricted-browser-primary {
+    border: 0;
+    background: linear-gradient(135deg, #cbff20, #8fd300);
+    color: #081100;
+}
+
+.restricted-browser-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+}
+
+.restricted-browser-tip {
+    margin: 0.95rem 0 0;
+    color: rgba(246, 248, 251, 0.66);
+    font-size: 0.88rem;
+    line-height: 1.55;
 }
 
 .xp-modal-backdrop {
@@ -1110,6 +1266,10 @@ body.streak-modal-open {
 }
 
 body.xp-modal-open {
+    overflow: hidden;
+}
+
+body.restricted-browser-modal-open {
     overflow: hidden;
 }
 
@@ -2768,6 +2928,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const streakModal = document.getElementById("streakModal");
     const xpModal = document.getElementById("xpModal");
     const manifestModal = document.getElementById("manifestModal");
+    const restrictedBrowserModal = document.getElementById("restrictedBrowserModal");
+    const restrictedBrowserCopy = document.getElementById("restrictedBrowserCopy");
+    const restrictedBrowserSteps = document.getElementById("restrictedBrowserSteps");
+    const restrictedBrowserClose = document.getElementById("restrictedBrowserClose");
+    const restrictedBrowserOpen = document.getElementById("restrictedBrowserOpen");
+    const restrictedBrowserCopyLink = document.getElementById("restrictedBrowserCopyLink");
     const xpModalTotal = document.getElementById("xpModalTotal");
     const xpTodayGain = document.getElementById("xpTodayGain");
     const xpModalMessage = document.getElementById("xpModalMessage");
@@ -2929,61 +3095,146 @@ document.addEventListener("DOMContentLoaded", () => {
     const inAppBrowserName = getInAppBrowserName();
     const isRestrictedBrowser = Boolean(inAppBrowserName);
 
+    const getRestrictedBrowserGuide = browserName => {
+        const guides = {
+            Instagram: {
+                intro: "Google sign-in is blocked inside Instagram's in-app browser. Open this page in Safari or Chrome, then tap login again.",
+                steps: [
+                    "Tap the menu in the top-right corner of Instagram's browser.",
+                    "Choose Open in browser or Open in external browser.",
+                    "Continue in Safari or Chrome and tap LOGIN again."
+                ]
+            },
+            Facebook: {
+                intro: "Google sign-in is blocked inside Facebook's in-app browser. Move this page into Safari or Chrome first.",
+                steps: [
+                    "Tap the menu icon in the top-right of the Facebook browser.",
+                    "Choose Open in browser or Open with external browser.",
+                    "Once Safari or Chrome opens, tap LOGIN again."
+                ]
+            },
+            Messenger: {
+                intro: "Google sign-in is blocked inside Messenger's in-app browser. Switch to your main browser first.",
+                steps: [
+                    "Tap the menu icon in Messenger's browser screen.",
+                    "Choose Open in browser.",
+                    "Continue in Safari or Chrome and start login there."
+                ]
+            },
+            Telegram: {
+                intro: "Google sign-in is blocked inside Telegram's in-app browser. Open this page in your main browser first.",
+                steps: [
+                    "Tap the three-dot menu in Telegram.",
+                    "Choose Open in Browser.",
+                    "When Chrome or Safari opens, tap LOGIN again."
+                ]
+            },
+            WhatsApp: {
+                intro: "Google sign-in is blocked inside WhatsApp's in-app browser. Open the page in Safari or Chrome first.",
+                steps: [
+                    "Tap the three-dot menu in WhatsApp's browser.",
+                    "Choose Open in browser.",
+                    "Continue in Chrome or Safari and tap LOGIN again."
+                ]
+            },
+            default: {
+                intro: "Google sign-in is blocked inside this in-app browser. Open this page in Safari or Chrome, then tap login again.",
+                steps: [
+                    "Open the menu in this in-app browser.",
+                    "Choose Open in browser or Open externally.",
+                    "When Safari or Chrome opens, tap LOGIN again."
+                ]
+            }
+        };
+
+        return guides[browserName] || guides.default;
+    };
+
+    const renderRestrictedBrowserSteps = browserName => {
+        if (!restrictedBrowserSteps) return;
+
+        const guide = getRestrictedBrowserGuide(browserName);
+        restrictedBrowserSteps.innerHTML = guide.steps
+            .map((step, index) => `
+                <div class="restricted-browser-step">
+                    <span class="restricted-browser-step-index">${index + 1}</span>
+                    <p class="restricted-browser-step-copy">${step}</p>
+                </div>
+            `)
+            .join("");
+    };
+
     const tryOpenExternalBrowser = () => {
         const currentUrl = window.location.href;
         const encodedUrl = encodeURIComponent(currentUrl);
         const userAgent = navigator.userAgent || "";
-        const anchors = [];
+        const plainUrl = currentUrl.replace(/^https?:\/\//i, "");
 
-        const queueAnchorOpen = href => {
-            const anchor = document.createElement("a");
-            anchor.href = href;
-            anchor.target = "_blank";
-            anchor.rel = "noopener noreferrer";
-            anchor.style.display = "none";
-            document.body.appendChild(anchor);
-            anchors.push(anchor);
-            anchor.click();
-        };
-
-        try {
-            if (/Android/i.test(userAgent)) {
-                queueAnchorOpen(`intent://${currentUrl.replace(/^https?:\/\//i, "")}#Intent;scheme=https;package=com.android.chrome;end`);
-                window.setTimeout(() => {
-                    queueAnchorOpen(`googlechrome://navigate?url=${encodedUrl}`);
-                }, 220);
-                return;
-            }
-
-            if (/iPhone|iPad|iPod/i.test(userAgent)) {
-                queueAnchorOpen(`googlechromes://${currentUrl.replace(/^https?:\/\//i, "")}`);
-                window.setTimeout(() => {
-                    queueAnchorOpen(currentUrl);
-                }, 220);
-                return;
-            }
-
-            queueAnchorOpen(currentUrl);
-        } finally {
+        if (/Android/i.test(userAgent)) {
+            window.location.href = `intent://${plainUrl}#Intent;scheme=https;package=com.android.chrome;end`;
             window.setTimeout(() => {
-                anchors.forEach(anchor => {
-                    if (anchor.parentNode) {
-                        anchor.parentNode.removeChild(anchor);
-                    }
-                });
-            }, 2500);
+                window.location.href = `googlechrome://navigate?url=${encodedUrl}`;
+            }, 280);
+            return;
         }
+
+        if (/iPhone|iPad|iPod/i.test(userAgent)) {
+            window.location.href = `googlechromes://${plainUrl}`;
+            return;
+        }
+
+        window.open(currentUrl, "_blank", "noopener,noreferrer");
+    };
+
+    const closeRestrictedBrowserModal = () => {
+        if (!restrictedBrowserModal) return;
+        restrictedBrowserModal.classList.add("hidden");
+        restrictedBrowserModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("restricted-browser-modal-open");
+    };
+
+    const openRestrictedBrowserModal = () => {
+        if (!restrictedBrowserModal) return;
+        const guide = getRestrictedBrowserGuide(inAppBrowserName);
+
+        if (restrictedBrowserCopy) {
+            restrictedBrowserCopy.textContent = guide.intro;
+        }
+
+        renderRestrictedBrowserSteps(inAppBrowserName);
+
+        restrictedBrowserModal.classList.remove("hidden");
+        restrictedBrowserModal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("restricted-browser-modal-open");
+    };
+
+    const copyCurrentPageLink = async () => {
+        const url = window.location.href;
+
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(url);
+            return true;
+        }
+
+        const input = document.createElement("input");
+        input.value = url;
+        input.setAttribute("readonly", "");
+        input.style.position = "absolute";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(input);
+        return copied;
     };
 
     const showRestrictedBrowserMessage = () => {
         const browserName = inAppBrowserName === "embedded browser"
             ? "this in-app browser"
             : `${inAppBrowserName}'s in-app browser`;
-        setStatus("OPEN IN CHROME/SAFARI", true);
-        tryOpenExternalBrowser();
-        window.alert(
-            `Google login is blocked in ${browserName}. We tried opening your regular browser. If it did not open, tap the menu in this app and choose Open in browser, then try again.`
-        );
+        setStatus("OPEN IN BROWSER", true);
+        openRestrictedBrowserModal();
+        console.warn(`Google login is blocked in ${browserName}.`);
     };
 
     const renderProfile = (user) => {
@@ -3031,7 +3282,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!hasSupabaseConfig) {
             setStatus("SUPABASE NOT READY", true);
         } else if (isRestrictedBrowser) {
-            setStatus("OPEN IN CHROME/SAFARI", true);
+            setStatus("OPEN IN BROWSER", true);
         }
     };
 
@@ -4550,11 +4801,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (restrictedBrowserClose) {
+        restrictedBrowserClose.addEventListener("click", () => {
+            closeRestrictedBrowserModal();
+        });
+    }
+
+    if (restrictedBrowserModal) {
+        restrictedBrowserModal.addEventListener("click", event => {
+            if (event.target instanceof HTMLElement && event.target.hasAttribute("data-restricted-close")) {
+                closeRestrictedBrowserModal();
+            }
+        });
+    }
+
+    if (restrictedBrowserOpen) {
+        restrictedBrowserOpen.addEventListener("click", () => {
+            tryOpenExternalBrowser();
+        });
+    }
+
+    if (restrictedBrowserCopyLink) {
+        restrictedBrowserCopyLink.addEventListener("click", async () => {
+            try {
+                const copied = await copyCurrentPageLink();
+                if (restrictedBrowserCopy) {
+                    restrictedBrowserCopy.textContent = copied
+                        ? "Link copied. Open Safari or Chrome manually and paste it there."
+                        : "Copy failed. Open the app menu and use Open in browser.";
+                }
+            } catch (error) {
+                console.error("Unable to copy page link", error);
+                if (restrictedBrowserCopy) {
+                    restrictedBrowserCopy.textContent = "Copy failed. Open the app menu and use Open in browser.";
+                }
+            }
+        });
+    }
+
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             closeStreakModal();
             closeXpModal();
             closeManifestModal();
+            closeRestrictedBrowserModal();
         }
     });
 
@@ -4627,6 +4917,7 @@ document.addEventListener("DOMContentLoaded", () => {
             closeStreakModal();
             closeXpModal();
             closeManifestModal();
+            closeRestrictedBrowserModal();
             delete window.CA365Progress;
             trackActivity("logout_success");
         });
@@ -4693,6 +4984,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     closeStreakModal();
                     closeXpModal();
                     closeManifestModal();
+                    closeRestrictedBrowserModal();
                     delete window.CA365Progress;
                 }
             });
