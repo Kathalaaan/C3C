@@ -795,6 +795,7 @@ body {
     position: relative;
     z-index: 1;
     width: min(92vw, 400px);
+    max-height: min(88vh, 540px);
     padding: 1.15rem 1.15rem 1.3rem;
     border-radius: 28px;
     background:
@@ -803,6 +804,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
     color: #f6f8fb;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .access-modal-close {
@@ -2799,6 +2802,12 @@ body.access-modal-open {
         max-width: 252px;
         font-size: 1.05rem;
     }
+
+    .access-modal-card,
+    .restricted-browser-card {
+        width: min(94vw, 400px);
+        padding: 1rem;
+    }
 }
 
 @media (max-height: 840px) {
@@ -3280,13 +3289,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentUrl = window.location.href;
         const encodedUrl = encodeURIComponent(currentUrl);
         const userAgent = navigator.userAgent || "";
+        const scheme = window.location.protocol.replace(":", "") || "https";
         const plainUrl = currentUrl.replace(/^https?:\/\//i, "");
 
         if (/Android/i.test(userAgent)) {
-            window.location.href = `intent://${plainUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+            window.location.href = `intent://${plainUrl}#Intent;scheme=${scheme};package=com.android.chrome;end`;
             window.setTimeout(() => {
                 window.location.href = `googlechrome://navigate?url=${encodedUrl}`;
             }, 280);
+            window.setTimeout(() => {
+                window.open(currentUrl, "_blank", "noopener,noreferrer");
+            }, 650);
             return;
         }
 
