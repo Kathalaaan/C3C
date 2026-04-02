@@ -184,6 +184,20 @@
         </div>
     </div>
 
+    <div class="access-modal hidden" id="accessModal" aria-hidden="true">
+        <div class="access-modal-backdrop" data-access-close></div>
+        <div class="access-modal-card" role="dialog" aria-modal="true" aria-labelledby="accessModalTitle">
+            <button class="access-modal-close" id="accessModalClose" type="button" aria-label="Close login required popup">Close</button>
+            <p class="access-modal-eyebrow">Login Required</p>
+            <h2 class="access-modal-title" id="accessModalTitle">Sign In To Open This Subject</h2>
+            <p class="access-modal-copy">Please login to access this subject roadmap, save your progress, and unlock streaks and XP.</p>
+            <div class="access-modal-actions">
+                <button class="access-modal-primary" id="accessModalLogin" type="button">Login With Google</button>
+                <button class="access-modal-secondary" id="accessModalCancel" type="button">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
     <div id="scroll-content">
         <section class="hero">
             <div class="hero-title-container">
@@ -569,6 +583,14 @@ body {
     place-items: center;
 }
 
+.access-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2125;
+    display: grid;
+    place-items: center;
+}
+
 .manifest-modal-backdrop {
     position: absolute;
     inset: 0;
@@ -760,6 +782,91 @@ body {
     color: rgba(246, 248, 251, 0.66);
     font-size: 0.88rem;
     line-height: 1.55;
+}
+
+.access-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.78);
+    backdrop-filter: blur(8px);
+}
+
+.access-modal-card {
+    position: relative;
+    z-index: 1;
+    width: min(92vw, 400px);
+    padding: 1.15rem 1.15rem 1.3rem;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top, rgba(204, 255, 0, 0.12), transparent 34%),
+        linear-gradient(180deg, #121519 0%, #090b0d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    color: #f6f8fb;
+}
+
+.access-modal-close {
+    display: block;
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.access-modal-eyebrow {
+    margin: 0.4rem 0 0;
+    color: #cbff20;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.access-modal-title {
+    margin: 0.65rem 0 0;
+    font-family: 'Syncopate', sans-serif;
+    font-size: clamp(1.05rem, 2.8vw, 1.4rem);
+    line-height: 1.35;
+    color: #ffffff;
+}
+
+.access-modal-copy {
+    margin: 0.9rem 0 0;
+    color: rgba(246, 248, 251, 0.82);
+    font-size: 0.97rem;
+    line-height: 1.65;
+}
+
+.access-modal-actions {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.2rem;
+}
+
+.access-modal-primary,
+.access-modal-secondary {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 14px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.access-modal-primary {
+    border: 0;
+    background: linear-gradient(135deg, #cbff20, #8fd300);
+    color: #081100;
+}
+
+.access-modal-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
 }
 
 .xp-modal-backdrop {
@@ -1270,6 +1377,10 @@ body.xp-modal-open {
 }
 
 body.restricted-browser-modal-open {
+    overflow: hidden;
+}
+
+body.access-modal-open {
     overflow: hidden;
 }
 
@@ -2533,7 +2644,7 @@ body.restricted-browser-modal-open {
     .brutal-nav {
         padding: 1rem 1rem !important;
         gap: 0.8rem;
-        align-items: flex-start;
+        align-items: center;
         flex-wrap: wrap;
         width: 100% !important;
         left: 0 !important;
@@ -2542,31 +2653,27 @@ body.restricted-browser-modal-open {
     }
 
     .nav-toggle {
-        display: inline-flex;
-        margin-left: auto;
-        z-index: 2;
-        flex: 0 0 48px;
+        display: none !important;
     }
 
     .nav-logo {
-        flex: 1 1 auto;
+        flex: 0 0 auto;
         justify-content: flex-start;
-        max-width: calc(100% - 60px);
+        max-width: none;
     }
 
     .nav-menu {
         gap: 0.8rem !important;
-        width: 100%;
-        order: 3;
-        display: none;
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1rem;
-        margin: 0.75rem 0 0;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 18px;
-        background: rgba(7, 7, 7, 0.92);
-        backdrop-filter: blur(14px);
+        width: auto;
+        order: 2;
+        display: flex !important;
+        flex-direction: row;
+        align-items: center;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .nav-link {
@@ -2580,23 +2687,18 @@ body.restricted-browser-modal-open {
     }
 
     .auth-controls {
-        display: none;
-        width: 100%;
-        order: 4;
+        display: flex !important;
+        width: auto;
+        order: 3;
         flex-wrap: wrap;
         justify-content: flex-start;
-        align-items: stretch;
-        padding: 0.95rem;
-        margin-top: 0.65rem;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 18px;
-        background: rgba(7, 7, 7, 0.92);
-        backdrop-filter: blur(14px);
-    }
-
-    .brutal-nav.menu-open .nav-menu,
-    .brutal-nav.menu-open .auth-controls {
-        display: flex !important;
+        align-items: center;
+        padding: 0;
+        margin-top: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .streak-trigger {
@@ -2736,11 +2838,12 @@ body.restricted-browser-modal-open {
     .brutal-nav {
         padding: 0.55rem 0.55rem !important;
         gap: 0.35rem !important;
+        justify-content: center;
     }
 
     .nav-menu {
         gap: 0.35rem !important;
-        padding: 0.8rem;
+        justify-content: center;
     }
 
     .nav-link {
@@ -2755,7 +2858,7 @@ body.restricted-browser-modal-open {
     }
 
     .auth-controls {
-        padding: 0.8rem;
+        justify-content: center;
     }
 
     .streak-trigger {
@@ -2929,11 +3032,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const xpModal = document.getElementById("xpModal");
     const manifestModal = document.getElementById("manifestModal");
     const restrictedBrowserModal = document.getElementById("restrictedBrowserModal");
+    const accessModal = document.getElementById("accessModal");
     const restrictedBrowserCopy = document.getElementById("restrictedBrowserCopy");
     const restrictedBrowserSteps = document.getElementById("restrictedBrowserSteps");
     const restrictedBrowserClose = document.getElementById("restrictedBrowserClose");
     const restrictedBrowserOpen = document.getElementById("restrictedBrowserOpen");
     const restrictedBrowserCopyLink = document.getElementById("restrictedBrowserCopyLink");
+    const accessModalClose = document.getElementById("accessModalClose");
+    const accessModalLogin = document.getElementById("accessModalLogin");
+    const accessModalCancel = document.getElementById("accessModalCancel");
     const xpModalTotal = document.getElementById("xpModalTotal");
     const xpTodayGain = document.getElementById("xpTodayGain");
     const xpModalMessage = document.getElementById("xpModalMessage");
@@ -3057,7 +3164,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const promptLoginRequired = () => {
         setStatus("LOGIN REQUIRED", true);
-        window.alert("Please login to access this subject.");
+        openAccessModal();
     };
 
     const getInAppBrowserName = () => {
@@ -3198,6 +3305,20 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("restricted-browser-modal-open");
     };
 
+    const closeAccessModal = () => {
+        if (!accessModal) return;
+        accessModal.classList.add("hidden");
+        accessModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("access-modal-open");
+    };
+
+    const openAccessModal = () => {
+        if (!accessModal) return;
+        accessModal.classList.remove("hidden");
+        accessModal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("access-modal-open");
+    };
+
     const openRestrictedBrowserModal = () => {
         if (!restrictedBrowserModal) return;
         const guide = getRestrictedBrowserGuide(inAppBrowserName);
@@ -3263,6 +3384,47 @@ document.addEventListener("DOMContentLoaded", () => {
         authAvatar.style.backgroundImage = avatarUrl ? `url("${avatarUrl}")` : "";
         authAvatar.textContent = avatarUrl ? "" : fullName.charAt(0).toUpperCase();
         authProfile.classList.remove("hidden");
+    };
+
+    const startLoginFlow = async () => {
+        if (isRestrictedBrowser) {
+            await trackActivity("login_blocked_in_app_browser", {
+                detected_browser: inAppBrowserName
+            });
+            closeAccessModal();
+            showRestrictedBrowserMessage();
+            return;
+        }
+
+        trackActivity("login_clicked", {
+            provider: "google"
+        });
+
+        if (!supabase) {
+            setStatus("Supabase is not configured yet.", true);
+            return;
+        }
+
+        setStatus("Redirecting to Google...");
+
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+                redirectTo: window.location.href,
+                queryParams: {
+                    access_type: "offline",
+                    prompt: "select_account"
+                }
+            }
+        });
+
+        if (error) {
+            console.error("Google sign-in failed", error.message);
+            setStatus(error.message, true);
+            await trackActivity("login_failed", {
+                reason: error.message
+            });
+        }
     };
 
     const setAuthUi = (user) => {
@@ -4849,11 +5011,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (accessModalClose) {
+        accessModalClose.addEventListener("click", () => {
+            closeAccessModal();
+        });
+    }
+
+    if (accessModalCancel) {
+        accessModalCancel.addEventListener("click", () => {
+            closeAccessModal();
+        });
+    }
+
+    if (accessModalLogin) {
+        accessModalLogin.addEventListener("click", async () => {
+            await startLoginFlow();
+        });
+    }
+
+    if (accessModal) {
+        accessModal.addEventListener("click", event => {
+            if (event.target instanceof HTMLElement && event.target.hasAttribute("data-access-close")) {
+                closeAccessModal();
+            }
+        });
+    }
+
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             closeStreakModal();
             closeXpModal();
             closeManifestModal();
+            closeAccessModal();
             closeRestrictedBrowserModal();
         }
     });
@@ -4867,43 +5056,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (loginButton) {
         loginButton.addEventListener("click", async () => {
-            if (isRestrictedBrowser) {
-                await trackActivity("login_blocked_in_app_browser", {
-                    detected_browser: inAppBrowserName
-                });
-                showRestrictedBrowserMessage();
-                return;
-            }
-
-            trackActivity("login_clicked", {
-                provider: "google"
-            });
-
-            if (!supabase) {
-                setStatus("Supabase is not configured yet.", true);
-                return;
-            }
-
-            setStatus("Redirecting to Google...");
-
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: {
-                    redirectTo: window.location.href,
-                    queryParams: {
-                        access_type: "offline",
-                        prompt: "select_account"
-                    }
-                }
-            });
-
-            if (error) {
-                console.error("Google sign-in failed", error.message);
-                setStatus(error.message, true);
-                await trackActivity("login_failed", {
-                    reason: error.message
-                });
-            }
+            await startLoginFlow();
         });
     }
 
@@ -4927,6 +5080,7 @@ document.addEventListener("DOMContentLoaded", () => {
             closeStreakModal();
             closeXpModal();
             closeManifestModal();
+            closeAccessModal();
             closeRestrictedBrowserModal();
             delete window.CA365Progress;
             trackActivity("logout_success");
@@ -4994,6 +5148,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     closeStreakModal();
                     closeXpModal();
                     closeManifestModal();
+                    closeAccessModal();
                     closeRestrictedBrowserModal();
                     delete window.CA365Progress;
                 }
