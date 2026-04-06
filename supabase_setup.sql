@@ -11,8 +11,8 @@ create table if not exists public.user_profiles (
     strength_area text,
     survey_completed boolean not null default false,
     last_sign_in_at timestamptz,
-    created_at timestamptz not null default timezone('utc'::text, now()),
-    updated_at timestamptz not null default timezone('utc'::text, now())
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 alter table public.user_profiles add column if not exists course_level text;
@@ -28,14 +28,14 @@ create table if not exists public.user_activity_logs (
     event_type text not null,
     page_url text,
     metadata jsonb not null default '{}'::jsonb,
-    created_at timestamptz not null default timezone('utc'::text, now())
+    created_at timestamptz not null default now()
 );
 
 create table if not exists public.user_state_store (
     user_id uuid not null references auth.users (id) on delete cascade,
     state_key text not null,
     state_value text not null,
-    updated_at timestamptz not null default timezone('utc'::text, now()),
+    updated_at timestamptz not null default now(),
     primary key (user_id, state_key)
 );
 
@@ -50,8 +50,8 @@ create table if not exists public.user_materials (
     size bigint not null default 0,
     url text,
     note_text text,
-    created_at timestamptz not null default timezone('utc'::text, now()),
-    updated_at timestamptz not null default timezone('utc'::text, now())
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 create or replace function public.set_updated_at()
@@ -59,10 +59,38 @@ returns trigger
 language plpgsql
 as $$
 begin
-    new.updated_at = timezone('utc'::text, now());
+    new.updated_at = now();
     return new;
 end;
 $$;
+
+create or replace function public.touch_user_profile_last_sign_in(p_user_id uuid default auth.uid())
+returns void
+language plpgsql
+as $$
+begin
+    update public.user_profiles
+    set last_sign_in_at = now()
+    where id = p_user_id
+      and auth.uid() = p_user_id;
+end;
+$$;
+
+grant execute on function public.touch_user_profile_last_sign_in(uuid) to authenticated;
+
+alter table public.user_profiles
+    alter column created_at set default now(),
+    alter column updated_at set default now();
+
+alter table public.user_activity_logs
+    alter column created_at set default now();
+
+alter table public.user_state_store
+    alter column updated_at set default now();
+
+alter table public.user_materials
+    alter column created_at set default now(),
+    alter column updated_at set default now();
 
 drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 
