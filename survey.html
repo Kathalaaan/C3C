@@ -362,6 +362,7 @@
                 url: "https://mccyabufvrtrnxezomqz.supabase.co",
                 anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jY3lhYnVmdnJ0cm54ZXpvbXF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MTM2ODAsImV4cCI6MjA5MDA4OTY4MH0.l4T8iaeIIDUU7keh72E_Z4m2i1xhx1apN-ctZkeU9RE"
             };
+            const authReturnStorageKey = "ca365-auth-return-to";
 
             const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
                 auth: {
@@ -382,6 +383,25 @@
                 "exam_group",
                 "strength_area"
             ];
+
+            const getReturnTarget = () => {
+                const storedValue = window.sessionStorage.getItem(authReturnStorageKey);
+                const candidate = storedValue || "";
+
+                if (!candidate) return "index1.html";
+
+                try {
+                    return new URL(candidate, window.location.href).toString();
+                } catch {
+                    return "index1.html";
+                }
+            };
+
+            const finishSurveyRedirect = () => {
+                const target = getReturnTarget();
+                window.sessionStorage.removeItem(authReturnStorageKey);
+                window.location.href = target;
+            };
 
             const setStatus = (message, tone = "") => {
                 statusText.textContent = message;
@@ -412,7 +432,7 @@
                 .maybeSingle();
 
             if (profile?.survey_completed) {
-                window.location.href = "index1.html";
+                finishSurveyRedirect();
                 return;
             }
 
@@ -461,7 +481,7 @@
                 setStatus("Saved. Redirecting to your dashboard...", "success");
 
                 setTimeout(() => {
-                    window.location.href = "index1.html";
+                    finishSurveyRedirect();
                 }, 350);
             });
 
