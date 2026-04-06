@@ -12,6 +12,7 @@
 
     var guardModalId = "ca365-auth-guard-modal";
     var guardStylesId = "ca365-auth-guard-styles";
+    var authReturnStorageKey = "ca365-auth-return-to";
 
     function getInAppBrowserName() {
         var userAgent = navigator.userAgent || "";
@@ -182,6 +183,12 @@
 
         loginButton.addEventListener("click", function () {
             var loginUrl = new URL("index1.html", window.location.href).toString();
+
+            try {
+                window.sessionStorage.setItem(authReturnStorageKey, window.location.href);
+            } catch (error) {
+                console.error("Unable to persist return URL before login", error);
+            }
 
             if (getInAppBrowserName()) {
                 tryOpenUrlInMainBrowser(loginUrl);
