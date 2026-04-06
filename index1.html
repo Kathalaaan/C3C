@@ -3516,8 +3516,7 @@ document.addEventListener("DOMContentLoaded", () => {
             email: user.email,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
             avatar_url: user.user_metadata?.avatar_url || null,
-            provider: user.app_metadata?.provider || "google",
-            last_sign_in_at: new Date().toISOString()
+            provider: user.app_metadata?.provider || "google"
         };
 
         const { error } = await supabase.from("user_profiles").upsert(profile, {
@@ -3526,6 +3525,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (error) {
             console.error("Unable to sync user profile", error.message);
+            return;
+        }
+
+        const { error: touchError } = await supabase.rpc("touch_user_profile_last_sign_in", {
+            p_user_id: user.id
+        });
+
+        if (touchError) {
+            console.error("Unable to update last sign-in timestamp", touchError.message);
         }
     };
 
