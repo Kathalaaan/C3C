@@ -3049,6 +3049,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const restrictedBrowserCopyLink = document.getElementById("restrictedBrowserCopyLink");
     const accessModalClose = document.getElementById("accessModalClose");
     const accessModalLogin = document.getElementById("accessModalLogin");
+    const authReturnStorageKey = "ca365-auth-return-to";
     const accessModalCancel = document.getElementById("accessModalCancel");
     const xpModalTotal = document.getElementById("xpModalTotal");
     const xpTodayGain = document.getElementById("xpTodayGain");
@@ -3150,6 +3151,48 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!label) return;
         label.textContent = "LOGIN";
         label.style.color = "";
+    };
+
+    const getCurrentUrlWithoutAuthParams = () => {
+        const url = new URL(window.location.href);
+        ["code", "error", "error_code", "error_description", "access_token", "refresh_token", "expires_at", "expires_in", "token_type", "provider_token", "provider_refresh_token"].forEach(param => {
+            url.searchParams.delete(param);
+        });
+        if (url.hash && /(access_token|refresh_token|error_description|error_code)/i.test(url.hash)) {
+            url.hash = "";
+        }
+        return url.toString();
+    };
+
+    const getRequestedReturnTo = () => {
+        const url = new URL(window.location.href);
+        const storedValue = window.sessionStorage.getItem(authReturnStorageKey);
+        const candidate = storedValue || "";
+
+        if (!candidate) return "";
+
+        try {
+            return new URL(candidate, window.location.href).toString();
+        } catch {
+            return "";
+        }
+    };
+
+    const persistReturnTo = value => {
+        if (!value) {
+            window.sessionStorage.removeItem(authReturnStorageKey);
+            return;
+        }
+        window.sessionStorage.setItem(authReturnStorageKey, value);
+    };
+
+    const redirectAfterLoginIfNeeded = () => {
+        const currentUrl = getCurrentUrlWithoutAuthParams();
+        const returnTo = getRequestedReturnTo();
+        if (!returnTo || returnTo === currentUrl) return false;
+        persistReturnTo("");
+        window.location.href = returnTo;
+        return true;
     };
 
     const promptLoginRequired = () => {
@@ -3401,10 +3444,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setStatus("Redirecting to Google...");
 
+        const redirectUrl = new URL(getCurrentUrlWithoutAuthParams());
+        const returnTo = getRequestedReturnTo();
+        if (returnTo) {
+            persistReturnTo(returnTo);
+        }
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: window.location.href,
+                redirectTo: redirectUrl.toString(),
                 queryParams: {
                     access_type: "offline",
                     prompt: "select_account"
@@ -4241,7 +4290,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!profile?.survey_completed && !isSurveyPage) {
+            const returnTo = getRequestedReturnTo();
+            if (returnTo) {
+                persistReturnTo(returnTo);
+            }
             window.location.href = "survey.html";
+            return;
+        }
+
+        if (!isSurveyPage && redirectAfterLoginIfNeeded()) {
+            return;
         }
     };
 
