@@ -169,6 +169,11 @@
         return new Date(Number(value) || Date.now()).toISOString();
     }
 
+    function getCreatedAtForSync(localItem, remoteItem) {
+        if (remoteItem && remoteItem.created_at) return remoteItem.created_at;
+        return toIsoDate(localItem && localItem.createdAt);
+    }
+
     function toLocalCreatedAt(value) {
         if (!value) return Date.now();
         if (typeof value === "number") return value;
@@ -298,7 +303,7 @@
                 size: Number(item.size) || 0,
                 url: item.kind === "link" ? item.url || null : null,
                 note_text: item.kind === "note" ? item.text || null : null,
-                created_at: toIsoDate(item.createdAt)
+                created_at: getCreatedAtForSync(item, remote)
             };
 
             if (item.kind === "file") {
