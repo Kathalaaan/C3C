@@ -14,14 +14,37 @@
     var guardStylesId = "ca365-auth-guard-styles";
     var authReturnStorageKey = "ca365-auth-return-to";
     var authReturnQueryKey = "returnTo";
+    var productionOrigin = "https://www.ca365compass.in";
+
+    function isLocalOrigin(url) {
+        if (!url) return false;
+        return url.protocol === "file:" ||
+            url.hostname === "localhost" ||
+            url.hostname === "127.0.0.1" ||
+            url.hostname === "0.0.0.0";
+    }
+
+    function getPublicUrl(pathOrUrl) {
+        var source = new URL(pathOrUrl || "index1.html", window.location.href);
+        if (!isLocalOrigin(source)) return source;
+
+        if (source.protocol === "file:") {
+            var fileName = source.pathname.split(/[\\/]/).filter(Boolean).pop() || "index1.html";
+            return new URL("/" + fileName + source.search + source.hash, productionOrigin);
+        }
+
+        return new URL(source.pathname + source.search + source.hash, productionOrigin);
+    }
 
     function normalizeReturnUrl(candidate) {
         if (!candidate) return "";
 
         try {
             var parsed = new URL(candidate, window.location.href);
-            if (parsed.origin !== window.location.origin) return "";
-            return parsed.toString();
+            var allowedOrigin = isLocalOrigin(new URL(window.location.href)) ? productionOrigin : window.location.origin;
+            var normalized = isLocalOrigin(parsed) ? getPublicUrl(parsed.toString()) : parsed;
+            if (normalized.origin !== allowedOrigin) return "";
+            return normalized.toString();
         } catch (error) {
             console.error("Unable to normalize auth return URL", error);
             return "";
@@ -216,7 +239,7 @@
 
         loginButton.addEventListener("click", function () {
             var returnUrl = persistReturnUrl(window.location.href) || normalizeReturnUrl(window.location.href);
-            var loginUrlObject = new URL("index1.html", window.location.href);
+            var loginUrlObject = getPublicUrl("index1.html");
 
             if (returnUrl) {
                 loginUrlObject.searchParams.set(authReturnQueryKey, returnUrl);
