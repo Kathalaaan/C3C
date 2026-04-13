@@ -363,6 +363,7 @@
                 anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jY3lhYnVmdnJ0cm54ZXpvbXF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MTM2ODAsImV4cCI6MjA5MDA4OTY4MH0.l4T8iaeIIDUU7keh72E_Z4m2i1xhx1apN-ctZkeU9RE"
             };
             const authReturnStorageKey = "ca365-auth-return-to";
+            const authReturnQueryKey = "returnTo";
 
             const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
                 auth: {
@@ -384,22 +385,52 @@
                 "strength_area"
             ];
 
-            const getReturnTarget = () => {
-                const storedValue = window.sessionStorage.getItem(authReturnStorageKey);
-                const candidate = storedValue || "";
-
-                if (!candidate) return "index1.html";
+            const normalizeReturnTarget = value => {
+                if (!value) return "";
 
                 try {
-                    return new URL(candidate, window.location.href).toString();
+                    const parsed = new URL(value, window.location.href);
+                    if (parsed.origin !== window.location.origin) return "";
+                    return parsed.toString();
                 } catch {
-                    return "index1.html";
+                    return "";
                 }
+            };
+
+            const clearStoredReturnTarget = () => {
+                try {
+                    window.sessionStorage.removeItem(authReturnStorageKey);
+                    window.localStorage.removeItem(authReturnStorageKey);
+                } catch (error) {
+                    console.error("Unable to clear auth return target", error);
+                }
+            };
+
+            const getReturnTarget = () => {
+                const url = new URL(window.location.href);
+                const urlValue = url.searchParams.get(authReturnQueryKey);
+                const sessionValue = (() => {
+                    try {
+                        return window.sessionStorage.getItem(authReturnStorageKey);
+                    } catch {
+                        return "";
+                    }
+                })();
+                const localValue = (() => {
+                    try {
+                        return window.localStorage.getItem(authReturnStorageKey);
+                    } catch {
+                        return "";
+                    }
+                })();
+                const candidate = normalizeReturnTarget(urlValue || sessionValue || localValue || "");
+
+                return candidate || "index1.html";
             };
 
             const finishSurveyRedirect = () => {
                 const target = getReturnTarget();
-                window.sessionStorage.removeItem(authReturnStorageKey);
+                clearStoredReturnTarget();
                 window.location.href = target;
             };
 
