@@ -36,13 +36,19 @@
         return new URL(source.pathname + source.search + source.hash, productionOrigin);
     }
 
+    function getProductionPageUrl(pathOrUrl) {
+        var source = new URL(pathOrUrl || "index1.html", window.location.href);
+        var fileName = source.pathname.split(/[\\/]/).filter(Boolean).pop() || "index1.html";
+        return new URL("/" + fileName + source.search + source.hash, productionOrigin);
+    }
+
     function normalizeReturnUrl(candidate) {
         if (!candidate) return "";
 
         try {
             var parsed = new URL(candidate, window.location.href);
-            var allowedOrigin = isLocalOrigin(new URL(window.location.href)) ? productionOrigin : window.location.origin;
-            var normalized = isLocalOrigin(parsed) ? getPublicUrl(parsed.toString()) : parsed;
+            var allowedOrigin = productionOrigin;
+            var normalized = isLocalOrigin(parsed) ? getProductionPageUrl(parsed.toString()) : parsed;
             if (normalized.origin !== allowedOrigin) return "";
             return normalized.toString();
         } catch (error) {
@@ -239,7 +245,7 @@
 
         loginButton.addEventListener("click", function () {
             var returnUrl = persistReturnUrl(window.location.href) || normalizeReturnUrl(window.location.href);
-            var loginUrlObject = getPublicUrl("index1.html");
+            var loginUrlObject = getProductionPageUrl("index1.html");
 
             if (returnUrl) {
                 loginUrlObject.searchParams.set(authReturnQueryKey, returnUrl);
