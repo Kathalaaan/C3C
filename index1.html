@@ -3105,6 +3105,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const accessModalLogin = document.getElementById("accessModalLogin");
     const authReturnStorageKey = "ca365-auth-return-to";
     const authReturnQueryKey = "returnTo";
+    const productionOrigin = "https://www.ca365compass.in";
     const accessModalCancel = document.getElementById("accessModalCancel");
     const xpModalTotal = document.getElementById("xpModalTotal");
     const xpTodayGain = document.getElementById("xpTodayGain");
@@ -3208,13 +3209,35 @@ document.addEventListener("DOMContentLoaded", () => {
         label.style.color = "";
     };
 
+    const isLocalOrigin = url => {
+        if (!url) return false;
+        return url.protocol === "file:" ||
+            url.hostname === "localhost" ||
+            url.hostname === "127.0.0.1" ||
+            url.hostname === "0.0.0.0";
+    };
+
+    const getPublicUrl = pathOrUrl => {
+        const source = new URL(pathOrUrl || "index1.html", window.location.href);
+        if (!isLocalOrigin(source)) return source;
+
+        if (source.protocol === "file:") {
+            const fileName = source.pathname.split(/[\\/]/).filter(Boolean).pop() || "index1.html";
+            return new URL(`/${fileName}${source.search}${source.hash}`, productionOrigin);
+        }
+
+        return new URL(`${source.pathname || "/index1.html"}${source.search}${source.hash}`, productionOrigin);
+    };
+
     const normalizeReturnTarget = candidate => {
         if (!candidate) return "";
 
         try {
             const url = new URL(candidate, window.location.href);
-            if (url.origin !== window.location.origin) return "";
-            return url.toString();
+            const allowedOrigin = isLocalOrigin(new URL(window.location.href)) ? productionOrigin : window.location.origin;
+            const normalized = isLocalOrigin(url) ? getPublicUrl(url.toString()) : url;
+            if (normalized.origin !== allowedOrigin) return "";
+            return normalized.toString();
         } catch (error) {
             console.error("Unable to normalize return target", error);
             return "";
@@ -3231,7 +3254,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const getCurrentUrlWithoutAuthParams = () => {
-        const url = new URL(window.location.href);
+        const url = getPublicUrl(window.location.href);
         ["code", "error", "error_code", "error_description", "access_token", "refresh_token", "expires_at", "expires_in", "token_type", "provider_token", "provider_refresh_token", authReturnQueryKey].forEach(param => {
             url.searchParams.delete(param);
         });
