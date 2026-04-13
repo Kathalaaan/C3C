@@ -3026,6 +3026,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let supabase = null;
     let currentSession = null;
     let lastScrollBucket = -1;
+    let authBootstrapPromise = null;
 
     const loginButton = document.getElementById("loginButton");
     const logoutButton = document.getElementById("logoutButton");
@@ -3050,6 +3051,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const accessModalClose = document.getElementById("accessModalClose");
     const accessModalLogin = document.getElementById("accessModalLogin");
     const authReturnStorageKey = "ca365-auth-return-to";
+    const authReturnQueryKey = "returnTo";
     const accessModalCancel = document.getElementById("accessModalCancel");
     const xpModalTotal = document.getElementById("xpModalTotal");
     const xpTodayGain = document.getElementById("xpTodayGain");
@@ -3153,9 +3155,31 @@ document.addEventListener("DOMContentLoaded", () => {
         label.style.color = "";
     };
 
+    const normalizeReturnTarget = candidate => {
+        if (!candidate) return "";
+
+        try {
+            const url = new URL(candidate, window.location.href);
+            if (url.origin !== window.location.origin) return "";
+            return url.toString();
+        } catch (error) {
+            console.error("Unable to normalize return target", error);
+            return "";
+        }
+    };
+
+    const clearPersistedReturnTo = () => {
+        try {
+            window.sessionStorage.removeItem(authReturnStorageKey);
+            window.localStorage.removeItem(authReturnStorageKey);
+        } catch (error) {
+            console.error("Unable to clear stored return target", error);
+        }
+    };
+
     const getCurrentUrlWithoutAuthParams = () => {
         const url = new URL(window.location.href);
-        ["code", "error", "error_code", "error_description", "access_token", "refresh_token", "expires_at", "expires_in", "token_type", "provider_token", "provider_refresh_token"].forEach(param => {
+        ["code", "error", "error_code", "error_description", "access_token", "refresh_token", "expires_at", "expires_in", "token_type", "provider_token", "provider_refresh_token", authReturnQueryKey].forEach(param => {
             url.searchParams.delete(param);
         });
         if (url.hash && /(access_token|refresh_token|error_description|error_code)/i.test(url.hash)) {
@@ -3166,31 +3190,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const getRequestedReturnTo = () => {
         const url = new URL(window.location.href);
-        const storedValue = window.sessionStorage.getItem(authReturnStorageKey);
-        const candidate = storedValue || "";
+        const urlValue = url.searchParams.get(authReturnQueryKey);
+        const sessionValue = (() => {
+            try {
+                return window.sessionStorage.getItem(authReturnStorageKey);
+            } catch {
+                return "";
+            }
+        })();
+        const localValue = (() => {
+            try {
+                return window.localStorage.getItem(authReturnStorageKey);
+            } catch {
+                return "";
+            }
+        })();
 
-        if (!candidate) return "";
-
-        try {
-            return new URL(candidate, window.location.href).toString();
-        } catch {
-            return "";
-        }
+        return normalizeReturnTarget(urlValue || sessionValue || localValue || "");
     };
 
     const persistReturnTo = value => {
-        if (!value) {
-            window.sessionStorage.removeItem(authReturnStorageKey);
-            return;
+        const normalized = normalizeReturnTarget(value);
+
+        try {
+            if (!normalized) {
+                clearPersistedReturnTo();
+                return "";
+            }
+
+            window.sessionStorage.setItem(authReturnStorageKey, normalized);
+            window.localStorage.setItem(authReturnStorageKey, normalized);
+            return normalized;
+        } catch (error) {
+            console.error("Unable to persist return target", error);
+            return normalized;
         }
-        window.sessionStorage.setItem(authReturnStorageKey, value);
     };
 
     const redirectAfterLoginIfNeeded = () => {
         const currentUrl = getCurrentUrlWithoutAuthParams();
         const returnTo = getRequestedReturnTo();
         if (!returnTo || returnTo === currentUrl) return false;
-        persistReturnTo("");
+        clearPersistedReturnTo();
         window.location.href = returnTo;
         return true;
     };
@@ -3423,6 +3464,11 @@ document.addEventListener("DOMContentLoaded", () => {
         authProfile.classList.remove("hidden");
     };
 
+    const ensureAuthBootstrap = async () => {
+        if (!authBootstrapPromise) return;
+        await authBootstrapPromise;
+    };
+
     const startLoginFlow = async () => {
         if (isRestrictedBrowser) {
             await trackActivity("login_blocked_in_app_browser", {
@@ -3437,17 +3483,24 @@ document.addEventListener("DOMContentLoaded", () => {
             provider: "google"
         });
 
+        await ensureAuthBootstrap();
+
         if (!supabase) {
-            setStatus("Supabase is not configured yet.", true);
+            supabase = await loadSupabase();
+        }
+
+        if (!supabase) {
+            setStatus("Login is loading. Please try again.", true);
             return;
         }
 
         setStatus("Redirecting to Google...");
 
         const redirectUrl = new URL(getCurrentUrlWithoutAuthParams());
-        const returnTo = getRequestedReturnTo();
+        const requestedReturnTo = getRequestedReturnTo();
+        const returnTo = persistReturnTo(requestedReturnTo || window.location.href);
         if (returnTo) {
-            persistReturnTo(returnTo);
+            redirectUrl.searchParams.set(authReturnQueryKey, returnTo);
         }
 
         const { error } = await supabase.auth.signInWithOAuth({
@@ -4508,6 +4561,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         anchor.addEventListener("click", () => {
                             playSubjectClickSound();
                         });
+                        anchor.addEventListener("click", async event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            await handleSubjectSelection({
+                                stage,
+                                group: item.group || null,
+                                value: item.label
+                            });
+                        });
+                    } else {
+                        anchor.addEventListener("click", event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        });
                     }
                     if (item.group) {
                         anchor.dataset.group = item.group;
@@ -4518,6 +4585,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 list.classList.toggle("is-active", stage === makisuState.stage);
             });
+        };
+
+        const handleSubjectSelection = async ({ stage, group, value }) => {
+            if (!stage || !value) return;
+
+            makisuState.stage = stage;
+            makisuState.open = true;
+
+            await ensureAuthBootstrap();
+
+            const roadmapHref = subjectRoadmapMap[value];
+            const roadmapUrl = roadmapHref ? new URL(roadmapHref, window.location.href).toString() : "";
+
+            if (!currentSession?.user) {
+                persistReturnTo(roadmapUrl || window.location.href);
+                promptLoginRequired();
+                return;
+            }
+
+            const stageLabel = makisuData[stage].label;
+            makisuState.group = group;
+            makisuState.hasUserSelection = true;
+            const selection = group
+                ? `${stageLabel} / ${group} / ${value}`
+                : `${stageLabel} / ${value}`;
+            setSelectionLabel(selection);
+            const laneId = stage === "foundation"
+                ? "foundation"
+                : stage === "intermediate"
+                    ? (group === "Group 1" ? "inter-group-1" : "inter-group-2")
+                    : (group === "Group 1" ? "final-group-1" : "final-group-2");
+            localStorage.setItem(dashboardContextKey, JSON.stringify({
+                stage,
+                stageLabel,
+                group,
+                laneId,
+                laneLabel: group ? `${stageLabel} ${group}` : stageLabel,
+                subjectTitle: value,
+                roadmapFile: roadmapHref || ""
+            }));
+            if (roadmapHref) {
+                persistReturnTo(roadmapUrl);
+                playSubjectClickSound();
+                window.setTimeout(() => {
+                    window.location.href = roadmapHref;
+                }, 700);
+            }
         };
 
         const syncMakisu = () => {
@@ -4569,10 +4683,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        makisuPanel.querySelectorAll(".makisu-demo a").forEach(link => {
-            link.addEventListener("click", event => event.preventDefault());
-        });
-
         makisuPanel.addEventListener("click", event => {
             const link = event.target.closest(".makisu-list a");
             if (!link) return;
@@ -4595,39 +4705,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (action === "subject") {
-                if (!currentSession?.user) {
-                    promptLoginRequired();
-                    return;
-                }
-
-                const stageLabel = makisuData[stage].label;
-                makisuState.group = group;
-                makisuState.hasUserSelection = true;
-                const selection = group
-                    ? `${stageLabel} / ${group} / ${value}`
-                    : `${stageLabel} / ${value}`;
-                setSelectionLabel(selection);
-                const roadmapHref = subjectRoadmapMap[value];
-                const laneId = stage === "foundation"
-                    ? "foundation"
-                    : stage === "intermediate"
-                        ? (group === "Group 1" ? "inter-group-1" : "inter-group-2")
-                        : (group === "Group 1" ? "final-group-1" : "final-group-2");
-                localStorage.setItem(dashboardContextKey, JSON.stringify({
-                    stage,
-                    stageLabel,
-                    group,
-                    laneId,
-                    laneLabel: group ? `${stageLabel} ${group}` : stageLabel,
-                    subjectTitle: value,
-                    roadmapFile: roadmapHref || ""
-                }));
-                if (roadmapHref) {
-                    playSubjectClickSound();
-                    window.setTimeout(() => {
-                        window.location.href = roadmapHref;
-                    }, 700);
-                }
                 return;
             }
         });
@@ -5180,7 +5257,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, { passive: true });
 
-    loadSupabase()
+    authBootstrapPromise = loadSupabase()
         .then(async client => {
             supabase = client;
 
