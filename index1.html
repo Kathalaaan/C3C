@@ -3229,13 +3229,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return new URL(`${source.pathname || "/index1.html"}${source.search}${source.hash}`, productionOrigin);
     };
 
+    const getProductionPageUrl = pathOrUrl => {
+        var source = new URL(pathOrUrl || "index1.html", window.location.href);
+        var fileName = source.pathname.split(/[\\/]/).filter(Boolean).pop() || "index1.html";
+        return new URL("/" + fileName + source.search + source.hash, productionOrigin);
+    };
+
     const normalizeReturnTarget = candidate => {
         if (!candidate) return "";
 
         try {
             const url = new URL(candidate, window.location.href);
-            const allowedOrigin = isLocalOrigin(new URL(window.location.href)) ? productionOrigin : window.location.origin;
-            const normalized = isLocalOrigin(url) ? getPublicUrl(url.toString()) : url;
+            const allowedOrigin = productionOrigin;
+            const normalized = isLocalOrigin(url) ? getProductionPageUrl(url.toString()) : url;
             if (normalized.origin !== allowedOrigin) return "";
             return normalized.toString();
         } catch (error) {
@@ -3254,7 +3260,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const getCurrentUrlWithoutAuthParams = () => {
-        const url = getPublicUrl(window.location.href);
+        const url = getProductionPageUrl(window.location.href);
         ["code", "error", "error_code", "error_description", "access_token", "refresh_token", "expires_at", "expires_in", "token_type", "provider_token", "provider_refresh_token", authReturnQueryKey].forEach(param => {
             url.searchParams.delete(param);
         });
@@ -3570,12 +3576,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setStatus("Redirecting to Google...");
 
-        const redirectUrl = new URL(getCurrentUrlWithoutAuthParams());
+        const redirectUrl = getProductionPageUrl("index1.html");
         const requestedReturnTo = getRequestedReturnTo();
-        const returnTo = persistReturnTo(requestedReturnTo || window.location.href);
-        if (returnTo) {
-            redirectUrl.searchParams.set(authReturnQueryKey, returnTo);
-        }
+        persistReturnTo(requestedReturnTo || window.location.href);
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
