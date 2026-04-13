@@ -289,11 +289,32 @@
 
 html {
     font-size: clamp(14px, 1vw, 18px);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
 }
 
 body {
     width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    position: relative;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
+}
+
+#scroll-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    transform-origin: center top;
+}
+
+@supports not (overflow: clip) {
+    #scroll-content {
+        overflow-x: hidden;
+    }
 }
 
 /* Navbar */
@@ -2747,23 +2768,55 @@ body.access-modal-open {
 
     .interaction-section {
         padding-inline: clamp(1rem, 4vw, 2rem);
+        overflow-x: clip;
     }
 
     .makisu-panel {
         max-width: none;
+        width: 100%;
+        overflow: hidden;
     }
 
     .makisu-demo {
-        min-height: 420px;
+        min-height: auto;
+        perspective: none;
+        transform-style: flat;
+        overflow: hidden;
     }
 
     .makisu-list {
-        width: min(14rem, 30vw);
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        width: 100%;
+        margin-bottom: 0.9rem;
+        transform: none !important;
+        transform-style: flat;
+    }
+
+    .makisu-list dd {
+        transform-style: flat;
+        backface-visibility: visible;
     }
 
     .makisu-toggle {
-        bottom: 6.6rem;
+        position: relative;
+        left: auto;
+        bottom: auto;
+        transform: none !important;
+        width: 100%;
+        margin-top: 0.6rem;
         min-width: 10rem;
+    }
+
+    .makisu-status {
+        position: relative;
+        left: auto;
+        bottom: auto;
+        transform: none !important;
+        width: 100%;
+        margin-top: 0.6rem;
     }
 
     .splosion-box {
@@ -2924,7 +2977,7 @@ body.access-modal-open {
     }
 
     .makisu-demo {
-        min-height: 520px;
+        min-height: auto;
     }
 
     .makisu-list {
@@ -3482,8 +3535,6 @@ document.addEventListener("DOMContentLoaded", () => {
         trackActivity("login_clicked", {
             provider: "google"
         });
-
-        await ensureAuthBootstrap();
 
         if (!supabase) {
             supabase = await loadSupabase();
@@ -4552,15 +4603,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     anchor.dataset.action = item.type;
                     if (item.type === "subject") {
                         anchor.classList.add("subject-sound-trigger");
-                        anchor.addEventListener("pointerdown", () => {
-                            playSubjectClickSound();
-                        });
-                        anchor.addEventListener("touchstart", () => {
-                            playSubjectClickSound();
-                        }, { passive: true });
-                        anchor.addEventListener("click", () => {
-                            playSubjectClickSound();
-                        });
                         anchor.addEventListener("click", async event => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -4592,8 +4634,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             makisuState.stage = stage;
             makisuState.open = true;
-
-            await ensureAuthBootstrap();
 
             const roadmapHref = subjectRoadmapMap[value];
             const roadmapUrl = roadmapHref ? new URL(roadmapHref, window.location.href).toString() : "";
@@ -4934,6 +4974,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let skew = 0;
 
     function scrollLoop() {
+        if (isTouch) {
+            if (content) content.style.transform = "";
+            return;
+        }
+
         const currentScroll = window.scrollY;
         const velocity = currentScroll - lastScroll;
         lastScroll = currentScroll;
