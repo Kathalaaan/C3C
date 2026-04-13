@@ -13,6 +13,39 @@
     var guardModalId = "ca365-auth-guard-modal";
     var guardStylesId = "ca365-auth-guard-styles";
     var authReturnStorageKey = "ca365-auth-return-to";
+    var authReturnQueryKey = "returnTo";
+
+    function normalizeReturnUrl(candidate) {
+        if (!candidate) return "";
+
+        try {
+            var parsed = new URL(candidate, window.location.href);
+            if (parsed.origin !== window.location.origin) return "";
+            return parsed.toString();
+        } catch (error) {
+            console.error("Unable to normalize auth return URL", error);
+            return "";
+        }
+    }
+
+    function persistReturnUrl(value) {
+        var normalized = normalizeReturnUrl(value);
+
+        try {
+            if (normalized) {
+                window.sessionStorage.setItem(authReturnStorageKey, normalized);
+                window.localStorage.setItem(authReturnStorageKey, normalized);
+                return normalized;
+            }
+
+            window.sessionStorage.removeItem(authReturnStorageKey);
+            window.localStorage.removeItem(authReturnStorageKey);
+        } catch (error) {
+            console.error("Unable to persist auth return URL", error);
+        }
+
+        return normalized;
+    }
 
     function getInAppBrowserName() {
         var userAgent = navigator.userAgent || "";
@@ -182,13 +215,14 @@
         var copyButton = modal.querySelector("#ca365AuthGuardCopyButton");
 
         loginButton.addEventListener("click", function () {
-            var loginUrl = new URL("index1.html", window.location.href).toString();
+            var returnUrl = persistReturnUrl(window.location.href) || normalizeReturnUrl(window.location.href);
+            var loginUrlObject = new URL("index1.html", window.location.href);
 
-            try {
-                window.sessionStorage.setItem(authReturnStorageKey, window.location.href);
-            } catch (error) {
-                console.error("Unable to persist return URL before login", error);
+            if (returnUrl) {
+                loginUrlObject.searchParams.set(authReturnQueryKey, returnUrl);
             }
+
+            var loginUrl = loginUrlObject.toString();
 
             if (getInAppBrowserName()) {
                 tryOpenUrlInMainBrowser(loginUrl);
