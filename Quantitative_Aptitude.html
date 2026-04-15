@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -3762,7 +3762,6 @@ If you are preparing for CA Foundation and want your study plan to feel more mea
             const topicId = node.dataset.topic;
             if (!topicId) return;
             node.addEventListener("click", () => renderTopic(topicId));
-            node.addEventListener("touchstart", () => renderTopic(topicId), { passive: true });
         });
 
         statusSelect.addEventListener("change", event => {
